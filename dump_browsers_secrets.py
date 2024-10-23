@@ -126,6 +126,7 @@ class Broswer:
                     elif query_type == "credit_cards":
                         query = "select name_on_card, card_number_encrypted, expiration_month, expiration_year from credit_cards"
                         result_columns = ["name", "card_number", "exp_m", "exp_y"]
+
                     elif query_type == "cookies":
                         query = "select name, encrypted_value,host_key,path,is_secure,is_httponly,expires_utc from cookies"
                         result_columns = ["name","encrypted_value","host_key","path","is_secure","is_httponly", "expires_utc"]
@@ -203,7 +204,9 @@ class Broswer:
                     browser_path.mkdir(parents=True, exist_ok=True)
                 print(cookie["data"])
                 cookie_path = browser_path / content_type
-                write_dict_to_csv(cookie_path, cookie["data"])                       
+
+                cookie.pop("encrypted_value")
+                write_dict_to_csv(cookie_path, cookie["data"])
                      
     def browse_browser_data(self):
         # Read browser logins, credit_cards, and cookies
