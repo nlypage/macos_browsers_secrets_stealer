@@ -106,8 +106,7 @@ class Broswer:
         try:
             cmd = f"openssl enc -base64 -A -d -aes-128-cbc -iv '{iv}' -K {key.decode('utf-8')} <<< {cipher_text_encoded.decode('utf-8')} 2>/dev/null"
             #print_debug(f"cmd={cmd}")
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-            output = result.stdout
+            output = subprocess.check_output(cmd, shell=True)
         except Exception as e:
             print(f"[-] Error running the openssl command: {e}")
             output = cipher_text
