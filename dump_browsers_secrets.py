@@ -17,6 +17,8 @@ import string
 import sys
 import tempfile
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.backends import default_backend
 
 DEBUG = True
@@ -97,24 +99,43 @@ class Broswer:
 
     def decrypter(self, cipher_text, key):
         try:
-            # Decode the base64 encoded ciphertext
-            cipher_text_decoded = base64.b64decode(cipher_text)
+            # Ensure the base64 string is properly padded
+            def decode_base64(data):
+                missing_padding = len(data) % 4
+                if missing_padding:
+                    data += '=' * (4 - missing_padding)
+                return base64.b64decode(data)
 
-            # Extract IV from the beginning of the decoded ciphertext
+            # Decode the base64 encoded ciphertext
+            cipher_text_decoded = decode_base64(cipher_text)
+
+            # Extract IV from the beginning of the decoded ciphertext (assuming it is prepended)
             iv = cipher_text_decoded[:16]
             encrypted_data = cipher_text_decoded[16:]
 
             # Derive the key using PBKDF2
-            key = hashlib.pbkdf2_hmac('sha1', key.encode('utf-8'), b'saltysalt', 1003)[:16]
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA1(),
+                length=16,
+                salt=b'saltysalt',
+                iterations=1003,
+                backend=default_backend()
+            )
+            key = kdf.derive(key.encode('utf-8'))
 
             # Set up AES decryption
             cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
             decryptor = cipher.decryptor()
 
             # Decrypt the data
-            decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
+            padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
+
+            # Unpad the decrypted data
+            unpadder = padding.PKCS7(128).unpadder()
+            decrypted_data = unpadder.update(padded_data) + unpadder.finalize()
 
             return decrypted_data
+
         except Exception as e:
             print(f"[-] Error during decryption: {e}")
             return None
