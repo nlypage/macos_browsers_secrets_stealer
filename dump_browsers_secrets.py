@@ -99,8 +99,12 @@ class Broswer:
             # Удаляем первые 3 байта, которые могут быть префиксом
             cipher_text = cipher_text[3:]
 
-            # Декодируем base64
-            cipher_text = base64.b64decode(cipher_text)
+            # Декодируем base64, если данные были закодированы
+            try:
+                cipher_text = base64.b64decode(cipher_text + b'=' * (-len(cipher_text) % 4))
+            except Exception as e:
+                print(f"[-] Base64 decoding error: {e}")
+                return None
 
             # Генерация ключа из пароля
             key = hashlib.pbkdf2_hmac('sha1', key.encode('utf-8'), b'saltysalt', 1003)[:16]
@@ -118,7 +122,6 @@ class Broswer:
 
             return decrypted_data.decode('utf-8')
         except Exception as e:
-            print(cipher_text, key)
             print(f"[-] Error decrypting data: {e}")
             return None  # Возвращаем None в случае ошибки
 
