@@ -96,7 +96,7 @@ class Broswer:
             if cookies_data:
                 self.cookies_path.append({browser_name: cookies_data})
 
-    def decrypter(cipher_text, key):
+    def decrypter(self, cipher_text, key):
         if len(cipher_text) < 3:
             raise ValueError("Ciphertext length is invalid")
 
