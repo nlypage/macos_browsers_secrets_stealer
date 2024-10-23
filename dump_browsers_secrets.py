@@ -104,7 +104,7 @@ class Broswer:
         key = binascii.hexlify(key)
 
         try:
-            cmd = f"openssl enc -base64 -d -aes-128-cbc -iv '{iv}' -K {key.decode('utf-8')} <<< {cipher_text_encoded.decode('utf-8')} 2>/dev/null"
+            cmd = f"openssl enc -base64 -A -d -aes-128-cbc -iv '{iv}' -K {key.decode('utf-8')} <<< {cipher_text_encoded.decode('utf-8')} 2>/dev/null"
             #print_debug(f"cmd={cmd}")
             output = subprocess.check_output(cmd, shell=True)
         except Exception as e:
