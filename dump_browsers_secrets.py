@@ -94,7 +94,7 @@ class Broswer:
             if cookies_data:
                 self.cookies_path.append({browser_name: cookies_data})
 
-    def decrypter(cipher_text, key):
+    def decrypter(self, cipher_text, key):
         try:
             cipher_text = cipher_text[3:]
             cipher_text = base64.b64decode(cipher_text)
