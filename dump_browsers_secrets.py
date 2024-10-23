@@ -274,7 +274,8 @@ class Broswer:
 def convert_bytes_to_utf8(data):
     def convert(value):
         if isinstance(value, bytes):
-            return value.decode('utf-8')  # Преобразование bytes в строку
+            # Используем 'replace' для замены недопустимых байтов
+            return value.decode('utf-8', errors='replace')
         return value
 
     def traverse_and_convert(d):
@@ -288,8 +289,10 @@ def convert_bytes_to_utf8(data):
     return traverse_and_convert(data)
 
 
+# Функция для записи данных в JSON файл
 def write_dict_to_json(filename, dict_data):
     if dict_data:
+        # Преобразование всех полей типа bytes
         dict_data = convert_bytes_to_utf8(dict_data)
 
         print_debug(f"Writing {filename}")
