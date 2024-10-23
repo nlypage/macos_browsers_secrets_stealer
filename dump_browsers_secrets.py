@@ -270,8 +270,28 @@ class Broswer:
                 else:
                     print(f"[-] browser_name= {browser_name} is not in  self.decrypt_keys={self.decrypt_keys}")
 
+
+def convert_bytes_to_utf8(data):
+    def convert(value):
+        if isinstance(value, bytes):
+            return value.decode('utf-8')  # Преобразование bytes в строку
+        return value
+
+    def traverse_and_convert(d):
+        if isinstance(d, dict):
+            return {k: traverse_and_convert(v) for k, v in d.items()}
+        elif isinstance(d, list):
+            return [traverse_and_convert(item) for item in d]
+        else:
+            return convert(d)
+
+    return traverse_and_convert(data)
+
+
 def write_dict_to_json(filename, dict_data):
     if dict_data:
+        dict_data = convert_bytes_to_utf8(dict_data)
+
         print_debug(f"Writing {filename}")
         with open(filename, "w") as f:
             json.dump(dict_data, f, indent=4, ensure_ascii=False)
