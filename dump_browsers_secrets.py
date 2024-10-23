@@ -18,7 +18,6 @@ import sys
 import tempfile
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
-from netscape_cookies import save_cookies_to_file
 
 
 DEBUG = True
@@ -279,6 +278,30 @@ def write_dict_to_csv(filename, dict_data):
             for d in dict_data:
                 writer.writerow(d)
 
+
+def write_cookies_to_netscape_file(cookie_path, cookies):
+    with open(cookie_path, 'w') as file:
+
+        # Write each cookie in the Netscape format
+        for cookie in cookies:
+            # Determine if the domain should be prefixed with a dot
+            domain_prefix = '.' if str(cookie["host_key"]).startswith('.') else ''
+
+            value = cookie["value"]
+            if isinstance(value, bytes):
+                value = value.decode('utf-8')
+
+            # Format: domain  include_subdomains  path  secure  expiration  name  value
+            line = "\t".join([
+                domain_prefix + str(cookie["host_key"]),  # Domain
+                "TRUE" if domain_prefix else "FALSE",  # Include subdomains
+                str(cookie["path"]),  # Path
+                "TRUE" if cookie["is_secure"] else "FALSE",  # Secure
+                str(cookie["expires_utc"]),  # Expiration (in UNIX time)
+                str(cookie["name"]),  # Name
+                str(cookie["value"])  # Value
+            ])
+            file.write(line + "\n")
 
 def run_command(command):
     cmd = shlex.split(command)
