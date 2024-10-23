@@ -18,6 +18,7 @@ import sys
 import tempfile
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
+from netscape_cookies import save_cookies_to_file
 
 
 DEBUG = True
@@ -203,7 +204,7 @@ class Broswer:
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
                 cookie_path = browser_path / content_type
-                write_cookies_to_netscape_file(cookie_path, cookie["data"])
+                save_cookies_to_file(cookie["data"], cookie_path)
                      
     def browse_browser_data(self):
         # Read browser logins, credit_cards, and cookies
@@ -279,25 +280,6 @@ def write_dict_to_csv(filename, dict_data):
                 writer.writerow(d)
 
 
-def write_cookies_to_netscape_file(cookie_path, cookies):
-    with open(cookie_path, 'w') as file:
-
-        # Write each cookie in the Netscape format
-        for cookie in cookies:
-            # Determine if the domain should be prefixed with a dot
-            domain_prefix = '.' if str(cookie["host_key"]).startswith('.') else ''
-            # Format: domain  include_subdomains  path  secure  expiration  name  value
-            line = "\t".join([
-                domain_prefix + str(cookie["host_key"]),  # Domain
-                "TRUE" if domain_prefix else "FALSE",  # Include subdomains
-                str(cookie["path"]),  # Path
-                "TRUE" if cookie["is_secure"] else "FALSE",  # Secure
-                str(cookie["expires_utc"]),  # Expiration (in UNIX time)
-                str(cookie["name"]),  # Name
-                str(cookie["value"])  # Value
-            ])
-            file.write(line + "\n")
-              
 def run_command(command):
     cmd = shlex.split(command)
     process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
