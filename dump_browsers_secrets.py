@@ -114,6 +114,7 @@ class Broswer:
                                        stderr=subprocess.PIPE)
             output, error = process.communicate(input=cipher_text_decoded)
 
+            print_debug(output, error)
             if process.returncode != 0:
                 print(f"[-] Ошибка при выполнении команды openssl: {error.decode('utf-8')}")
                 return cipher_text
