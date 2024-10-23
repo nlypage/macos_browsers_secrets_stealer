@@ -96,6 +96,7 @@ class Broswer:
 
     def decrypter(self, cipher_text, key):
         try:
+            print(cipher_text, key)
             cipher_text = cipher_text[3:]
             cipher_text = base64.b64decode(cipher_text)
             iv = b' ' * 16
