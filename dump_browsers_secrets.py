@@ -94,8 +94,20 @@ class Broswer:
                 self.cookies_path.append({browser_name: cookies_data})
 
     def decrypter(self, cipher_text, key):
+        def decode_base64(data):
+            # Добавление недостающих символов заполнения
+            missing_padding = len(data) % 4
+            if missing_padding:
+                data += '=' * (4 - missing_padding)
+
+            try:
+                return base64.b64decode(data)
+            except Exception as e:
+                print(f"Ошибка при декодировании: {e}")
+                return None
+
         # Удаляем первые три символа из зашифрованного текста и декодируем base64
-        cipher_text_decoded = base64.b64decode(cipher_text[3:])
+        cipher_text_decoded = decode_base64(cipher_text[3:])
 
         # Инициализируем вектор инициализации (IV)
         iv = '20202020202020202020202020202020'
