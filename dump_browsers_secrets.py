@@ -1,5 +1,7 @@
 import base64
 import binascii
+import json
+
 # https://github.com/n0fate/chainbreaker
 import chainbreaker
 import csv
@@ -178,7 +180,7 @@ class Broswer:
                     browser_path.mkdir(parents=True, exist_ok=True)
                     
                 login_path = browser_path / content_type
-                write_dict_to_csv(login_path, login["data"])
+                write_dict_to_json(login_path, login["data"])
                 
         # write self.logins to the output file
         print_info("Writing credit cards info to a file")
@@ -191,7 +193,7 @@ class Broswer:
                     browser_path.mkdir(parents=True, exist_ok=True)
                     
                 credit_card_path = browser_path / content_type
-                write_dict_to_csv(credit_card_path, credit_card["data"])
+                write_dict_to_json(credit_card_path, credit_card["data"])
                 
         # write self.logins to the output file
         print_info("Writing cookies to a file")    
@@ -203,7 +205,7 @@ class Broswer:
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
                 cookie_path = browser_path / content_type
-                write_dict_to_csv(cookie_path, cookie["data"])
+                write_dict_to_json(cookie_path, cookie["data"])
                      
     def browse_browser_data(self):
         # Read browser logins, credit_cards, and cookies
@@ -267,16 +269,12 @@ class Broswer:
                                 print(f"[-] Error decrypting cookies: {e}")        
                 else:
                     print(f"[-] browser_name= {browser_name} is not in  self.decrypt_keys={self.decrypt_keys}")
-       
-def write_dict_to_csv(filename, dict_data):
-    #print(dict_data)
-    if dict_data: 
+
+def write_dict_to_json(filename, dict_data):
+    if dict_data:
         print_debug(f"Writing {filename}")
-        with open(filename, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=dict_data[0].keys())
-            writer.writeheader()
-            for d in dict_data:
-                writer.writerow(d)
+        with open(filename, "w") as f:
+            json.dump(dict_data, f, indent=4, ensure_ascii=False)
               
 def run_command(command):
     cmd = shlex.split(command)
