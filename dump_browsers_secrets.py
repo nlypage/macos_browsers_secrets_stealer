@@ -94,22 +94,32 @@ class Broswer:
                 self.cookies_path.append({browser_name: cookies_data})
 
     def decrypter(self, cipher_text, key):
+        # Удаляем первые три символа из зашифрованного текста и декодируем base64
+        cipher_text_decoded = base64.b64decode(cipher_text[3:])
 
-        #print_debug(f"[+] decrypting {cipher_text} and  key is {key}")
-        cipher_text_encoded = base64.b64encode(cipher_text[3:])
-        iv = ''.join(('20', '20', '20', '20', '20', '20', '20', '20', '20', '20',
-                         '20', '20', '20', '20', '20', '20'))
+        # Инициализируем вектор инициализации (IV)
+        iv = '20202020202020202020202020202020'
+
+        # Преобразуем ключ в байты и генерируем хэш
         key = key.encode("utf-8")
         key = hashlib.pbkdf2_hmac('sha1', key, b'saltysalt', 1003)[:16]
-        key = binascii.hexlify(key)
+        key = binascii.hexlify(key).decode('utf-8')
 
         try:
-            cmd = f"openssl enc -base64 -A -d -aes-128-cbc -iv '{iv}' -K {key.decode('utf-8')} <<< {cipher_text_encoded.decode('utf-8')} 2>/dev/null"
-            #print_debug(f"cmd={cmd}")
-            output = subprocess.check_output(cmd, shell=True)
+            # Формируем команду для расшифровки с помощью openssl
+            cmd = f"openssl enc -aes-128-cbc -d -K {key} -iv {iv}"
+
+            # Запускаем команду через subprocess и передаем расшифрованный текст через stdin
+            process = subprocess.Popen(cmd, shell=True, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+            output, error = process.communicate(input=cipher_text_decoded)
+
+            if process.returncode != 0:
+                print(f"[-] Ошибка при выполнении команды openssl: {error.decode('utf-8')}")
+                return cipher_text
         except Exception as e:
-            print(f"[-] Error running the openssl command: {e}")
-            output = cipher_text
+            print(f"[-] Ошибка при выполнении команды openssl: {e}")
+            return cipher_text
 
         print(output)
         return output
