@@ -114,7 +114,7 @@ class Broswer:
         # Дешифруем данные
         decrypted_data = decryptor.update(cipher_text[3:]) + decryptor.finalize()
 
-        return decrypted_data
+        return decrypted_data.decode("utf-8")
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
