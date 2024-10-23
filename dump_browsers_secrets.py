@@ -114,13 +114,12 @@ class Broswer:
             # Decrypt and unpad the data
             decrypted_data = unpad(cipher.decrypt(ciphertext), AES.block_size)
             # Convert decrypted data to UTF-8 string
-            decrypted_data_utf8 = decrypted_data.decode('utf-8')
         except (ValueError, UnicodeDecodeError) as e:
             print(f"[-] Error during decryption: {e}")
             return cipher_text
 
-        print(decrypted_data_utf8)
-        return decrypted_data_utf8
+        print(decrypted_data)
+        return decrypted_data
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
