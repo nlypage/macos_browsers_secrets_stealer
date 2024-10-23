@@ -203,7 +203,7 @@ class Broswer:
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
                 cookie_path = browser_path / content_type
-                save_cookies_to_file(cookie["data"], cookie_path)
+                write_cookies_to_netscape_file(cookie_path, cookie["data"])
                      
     def browse_browser_data(self):
         # Read browser logins, credit_cards, and cookies
