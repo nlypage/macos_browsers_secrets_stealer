@@ -281,25 +281,24 @@ def write_dict_to_csv(filename, dict_data):
 
 def write_cookies_to_netscape_file(cookie_path, cookies):
     with open(cookie_path, 'w') as file:
-
         # Write each cookie in the Netscape format
         for cookie in cookies:
             # Determine if the domain should be prefixed with a dot
-            domain_prefix = '.' if str(cookie["host_key"]).startswith('.') else ''
-
+            domain_prefix = '.' if cookie["host_key"].startswith('.') else ''
+            # Decode the value if necessary
             value = cookie["value"]
             if isinstance(value, bytes):
-                value = value.decode('utf-8')
+                value = str(value)  # Adjust encoding as needed
 
             # Format: domain  include_subdomains  path  secure  expiration  name  value
             line = "\t".join([
-                domain_prefix + str(cookie["host_key"]),  # Domain
+                domain_prefix + cookie["host_key"],  # Domain
                 "TRUE" if domain_prefix else "FALSE",  # Include subdomains
-                str(cookie["path"]),  # Path
+                cookie["path"],  # Path
                 "TRUE" if cookie["is_secure"] else "FALSE",  # Secure
                 str(cookie["expires_utc"]),  # Expiration (in UNIX time)
-                str(cookie["name"]),  # Name
-                str(cookie["value"])  # Value
+                cookie["name"],  # Name
+                value  # Value
             ])
             file.write(line + "\n")
 
