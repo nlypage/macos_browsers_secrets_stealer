@@ -201,7 +201,7 @@ class Broswer:
                 browser_path = secret_output / cookie["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
-                    
+                print(cookie["data"])
                 cookie_path = browser_path / content_type
                 write_dict_to_csv(cookie_path, cookie["data"])                       
                      
