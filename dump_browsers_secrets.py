@@ -99,21 +99,22 @@ class Broswer:
 
     def decrypter(self, cipher_text, key):
         try:
-            # Ensure the base64 string is properly padded
+            # Обеспечить правильное дополнение base64-строки и декодировать ее
             def decode_base64(data):
                 missing_padding = len(data) % 4
                 if missing_padding:
                     data += '=' * (4 - missing_padding)
                 return base64.b64decode(data)
 
-            # Decode the base64 encoded ciphertext
-            cipher_text_decoded = decode_base64(cipher_text)
+            # Декодировать base64-кодированный текст шифра
+            cipher_text_decoded = decode_base64(
+                cipher_text.encode('utf-8'))  # Преобразовать в байты перед декодированием
 
-            # Extract IV from the beginning of the decoded ciphertext (assuming it is prepended)
+            # Извлечь IV из начала декодированного текста шифра (предполагается, что он добавлен в начало)
             iv = cipher_text_decoded[:16]
             encrypted_data = cipher_text_decoded[16:]
 
-            # Derive the key using PBKDF2
+            # Вывести ключ с использованием PBKDF2
             kdf = PBKDF2HMAC(
                 algorithm=hashes.SHA1(),
                 length=16,
@@ -121,20 +122,20 @@ class Broswer:
                 iterations=1003,
                 backend=default_backend()
             )
-            key = kdf.derive(key.encode('utf-8'))
+            key_bytes = kdf.derive(key.encode('utf-8'))
 
-            # Set up AES decryption
-            cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+            # Настроить AES-дешифрование
+            cipher = Cipher(algorithms.AES(key_bytes), modes.CBC(iv), backend=default_backend())
             decryptor = cipher.decryptor()
 
-            # Decrypt the data
+            # Расшифровать данные
             padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
 
-            # Unpad the decrypted data
+            # Удалить дополнение из расшифрованных данных
             unpadder = padding.PKCS7(128).unpadder()
             decrypted_data = unpadder.update(padded_data) + unpadder.finalize()
 
-            return decrypted_data
+            return decrypted_data.decode('utf-8')  # Предполагается, что расшифрованные данные закодированы в UTF-8
 
         except Exception as e:
             print(f"[-] Error during decryption: {e}")
